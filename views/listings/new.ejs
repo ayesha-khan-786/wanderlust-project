@@ -1,4 +1,11 @@
 <% layout("/layouts/boilerplate") %>
+
+<script src="https://unpkg.com/@geoapify/geocoder-autocomplete@1.2.0"></script>
+<script>
+    const MAP_TOKEN = "<%=process.env.MAP_TOKEN%>";
+    console.log("Geoapify MAP_TOKEN =>", MAP_TOKEN);
+</script>
+
 <div class="row mt-3">
   <div class="col-8 offset-2">
 
@@ -68,6 +75,12 @@
            <option value="Domes">Domes</option>
       </select>
   </div>    
+
+      <!-- Hidden inputs to capture coordinates -->
+       <input type="hidden" name="listing[latitude]" value="28.61">
+       <input type="hidden" name="listing[longitude]" value="77.23">
+
+            <p id="selectedLocation" class="text-muted mb-2"></p>
 
       <button class="btn btn-dark add-btn mb-3">Add</button>
      

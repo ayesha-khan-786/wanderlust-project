@@ -1,7 +1,5 @@
-const Listing = require("../models/listing")
-const mbxGeocoding = require('@mapbox/mapbox-sdk/services/geocoding');  
+const Listing = require("../models/listing") 
 const mapToken = process.env.MAP_TOKEN;
-const geocodingClient = mbxGeocoding ({ accessToken: mapToken });
 
 module.exports.index = async (req, res) => {
     const { category, country } = req.query;
@@ -51,32 +49,49 @@ module.exports.showListing = async (req, res) => {
 };
 
 
-module.exports.createListing = async (req, res, next) => {      
-  
-   let response = await geocodingClient.forwardGeocode({
-        query: req.body.listing.location,
-        limit: 1,
-      })
-        .send();
+module.exports.createListing = async (req, res, next) => {
+  try {
+    const { listing } = req.body;
 
-   let url = req.file.path;                      
-   let filename = req.file.filename;
+    // Step 1: Call Geoapify to get coordinates using location string
+    const geoRes = await axios.get(
+      `https://api.geoapify.com/v1/geocode/search?text=${listing.location}&apiKey=${process.env.MAP_TOKEN}`
+    );
+    const feature = geoRes.data.features[0];
 
-const newListing = new Listing({
-    ...req.body.listing, 
-    owner: req.user._id,
-    image: { url, filename },
-    geometry: response.body.features[0].geometry,
-});
-  
+    if (!feature) {
+      return res.status(400).send("Could not geocode the location.");
+    }
 
-   let savedListing = await newListing.save();
-   console.log(savedListing);
-   console.log(req.body.listing);
+    const [lon, lat] = feature.geometry.coordinates;
 
-   req.flash("success", "New Listing Created!");
+    // Step 2: Create new listing with geometry
+    const newListing = new Listing({
+      ...listing,
+      geometry: {
+        type: "Point",
+        coordinates: [lon, lat], // GeoJSON requires [lon, lat]
+      },
+    });
 
-   res.redirect("/listings");
+    // Step 3: Handle image upload
+    if (req.file) {
+      newListing.image = {
+        url: req.file.path,
+        filename: req.file.filename,
+      };
+    }
+
+    // Step 4: Set owner and save
+    newListing.owner = req.user._id;
+    await newListing.save();
+
+    req.flash("success", "New Listing Created");
+    res.redirect("/listings");
+  } catch (err) {
+    console.error("Listing create error:", err.message);
+    next(err);
+  }
 };
 
 module.exports.renderEditForm = async (req, res) => {                

@@ -12,6 +12,8 @@ module.exports.listingSchema = Joi.object({
         image: Joi.object({
             url: Joi.string().allow('', null)
         }),
+        latitude: Joi.number().allow(null, '').optional(),
+        longitude: Joi.number().allow(null, '').optional(),
         category: Joi.string().valid(
             'Trending', 
             'Rooms', 
