@@ -1,5 +1,6 @@
 const Listing = require("../models/listing") 
 const mapToken = process.env.MAP_TOKEN;
+const axios = require("axios");
 
 module.exports.index = async (req, res) => {
     const { category, country } = req.query;
